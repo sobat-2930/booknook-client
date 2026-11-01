@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import type { Book } from "@/lib/types";
 
 const palette: Record<string, [string, string]> = {
@@ -8,15 +10,38 @@ const palette: Record<string, [string, string]> = {
   Others: ["#4a3b2a", "#d9a441"],
 };
 
-export default function BookCover({ book }: { book: Book }) {
-  if (book.image) {
+interface BookCoverProps {
+  book: Book;
+  compact?: boolean;
+}
+
+export default function BookCover({ book, compact = false }: BookCoverProps) {
+  const [failed, setFailed] = useState<boolean>(false);
+
+  if (book.image && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={book.image} alt={book.title} className="h-full w-full object-cover" />
+      <img
+        src={book.image}
+        alt={book.title}
+        onError={() => setFailed(true)}
+        className="h-full w-full object-cover"
+      />
     );
   }
 
   const [bg, fg] = palette[book.category] ?? palette.Others;
+
+  if (compact) {
+    return (
+      <div
+        className="flex h-full w-full items-center justify-center font-display text-lg font-bold"
+        style={{ background: bg, color: fg }}
+      >
+        {book.title[0]}
+      </div>
+    );
+  }
 
   return (
     <div
