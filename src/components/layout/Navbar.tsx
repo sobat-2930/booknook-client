@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -14,14 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Logo from "@/components/common/Logo";
-import type { AppUser } from "@/lib/types";
+import { signOut, useSession } from "@/lib/auth-client";
 import ThemeToggle from "./ThemeToggle";
-
-// TEMP: replace with BetterAuth session later.
-// Logged-out view:
-const user = null as AppUser | null;
-// Logged-in view (uncomment to test):
-// const user = { name: "Su", email: "su@example.com", image: "" } as AppUser | null;
 
 const publicLinks = [
   { href: "/", label: "Home" },
@@ -35,6 +30,10 @@ const privateLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, isPending } = useSession();
+  const user = session?.user;
+
   const links = user ? [...publicLinks, ...privateLinks] : publicLinks;
 
   const linkClass = (href: string): string =>
@@ -43,6 +42,18 @@ export default function Navbar() {
         ? "bg-secondary text-secondary-foreground"
         : "text-foreground/70 hover:bg-muted hover:text-foreground"
     }`;
+
+  const handleLogout = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("You have been logged out.");
+          router.push("/");
+          router.refresh();
+        },
+      },
+    });
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
@@ -61,12 +72,14 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
 
-          {user ? (
+          {isPending ? (
+            <div className="h-9 w-24 animate-pulse rounded-full bg-muted" />
+          ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded-full outline-none ring-primary focus-visible:ring-2">
                 <Avatar className="h-9 w-9 border-2 border-primary">
-                  <AvatarImage src={user.image} alt={user.name} />
-                  <AvatarFallback>{user.name[0]}</AvatarFallback>
+                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
+                  <AvatarFallback>{user.name?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
@@ -75,7 +88,12 @@ export default function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link href="/profile">My Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Logout</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer text-destructive"
+                >
+                  Logout
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -104,7 +122,7 @@ export default function Navbar() {
                     {l.label}
                   </Link>
                 ))}
-                {!user && (
+                {!isPending && !user && (
                   <div className="mt-4 flex flex-col gap-2">
                     <Button asChild variant="outline" className="rounded-full">
                       <Link href="/login">Login</Link>
@@ -113,6 +131,15 @@ export default function Navbar() {
                       <Link href="/register">Register</Link>
                     </Button>
                   </div>
+                )}
+                {user && (
+                  <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    className="mt-4 rounded-full text-destructive"
+                  >
+                    Logout
+                  </Button>
                 )}
               </div>
             </SheetContent>
