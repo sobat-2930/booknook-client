@@ -4,10 +4,10 @@ import { FaXTwitter, FaFacebookF, FaInstagram, FaGithub } from "react-icons/fa6"
 import Logo from "@/components/common/Logo";
 
 const socials = [
-  { icon: FaXTwitter, href: "https://x.com", label: "X" },
-  { icon: FaFacebookF, href: "https://facebook.com", label: "Facebook" },
-  { icon: FaInstagram, href: "https://instagram.com", label: "Instagram" },
-  { icon: FaGithub, href: "https://github.com", label: "GitHub" },
+  { icon: FaXTwitter, label: "X" },
+  { icon: FaFacebookF, label: "Facebook" },
+  { icon: FaInstagram, label: "Instagram" },
+  { icon: FaGithub, label: "GitHub" },
 ];
 
 export default function Footer() {
@@ -35,23 +35,23 @@ export default function Footer() {
 
         <div>
           <h3 className="mb-4 text-lg font-bold">Contact</h3>
-          <ul className="space-y-3 text-sm opacity-80">
+          <ul className="pointer-events-none cursor-default select-none space-y-3 text-sm opacity-80">
             <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> hello@booknook.app</li>
             <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> +880 1700-000000</li>
             <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> 12 Reading Lane, Book City</li>
           </ul>
-          <div className="mt-5 flex gap-3">
-            {socials.map(({ icon: Icon, href, label }) => (
-              <a
+
+          {/* Social icons: display only, not clickable */}
+          <div className="pointer-events-none mt-5 flex cursor-default select-none gap-3">
+            {socials.map(({ icon: Icon, label }) => (
+              <span
                 key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
                 aria-label={label}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-secondary-foreground/30 transition hover:bg-accent hover:text-accent-foreground"
+                role="img"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-secondary-foreground/30"
               >
                 <Icon className="h-4 w-4" />
-              </a>
+              </span>
             ))}
           </div>
         </div>

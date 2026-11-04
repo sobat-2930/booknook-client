@@ -13,8 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { categories, mockUser } from "@/lib/mock-data";
-import type { Category } from "@/lib/types";
+import { categories } from "@/lib/mock-data";
+import { useSession } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
+import { uploadToImgbb } from "@/lib/imgbb";
+import type { Book, Category } from "@/lib/types";
 
 export default function AddBookForm() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -22,7 +25,8 @@ export default function AddBookForm() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const user = mockUser; // later: BetterAuth session
+  const { data: session } = useSession();
+  const user = session?.user;
 
   const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -33,6 +37,8 @@ export default function AddBookForm() {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+
     if (!category) {
       toast.error("Please choose a category.");
       return;
@@ -43,15 +49,31 @@ export default function AddBookForm() {
     }
 
     setLoading(true);
-    // later: 1) upload `file` to imgbb  2) POST /books with form data + createdAt
-    await new Promise((r) => setTimeout(r, 700));
-    toast.success("Book added to the nook!");
+    try {
+      const imageUrl = await uploadToImgbb(file);
 
-    formRef.current?.reset();
-    setCategory("");
-    setFile(null);
-    setPreview("");
-    setLoading(false);
+      await apiFetch<Book>("/books", {
+        method: "POST",
+        body: JSON.stringify({
+          title: String(fd.get("title")),
+          author: String(fd.get("author")),
+          category,
+          image: imageUrl,
+          description: String(fd.get("description")),
+          copies: Number(fd.get("copies")),
+        }),
+      });
+
+      toast.success("Book added to the nook!");
+      formRef.current?.reset();
+      setCategory("");
+      setFile(null);
+      setPreview("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add the book.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -124,11 +146,11 @@ export default function AddBookForm() {
 
         <div className="space-y-2">
           <Label htmlFor="userName">Your Name</Label>
-          <Input id="userName" value={user.name} readOnly className="bg-muted" />
+          <Input id="userName" value={user?.name ?? ""} readOnly className="bg-muted" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="userEmail">Your Email</Label>
-          <Input id="userEmail" value={user.email} readOnly className="bg-muted" />
+          <Input id="userEmail" value={user?.email ?? ""} readOnly className="bg-muted" />
         </div>
 
         <div className="md:col-span-2">

@@ -1,19 +1,31 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import BookCard from "@/components/common/BookCard";
+import Spinner from "@/components/common/Spinner";
 import { categories } from "@/lib/mock-data";
+import { apiFetch } from "@/lib/api";
 import type { Book } from "@/lib/types";
 
-export default function BooksExplorer({ books }: { books: Book[] }) {
+export default function BooksExplorer() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
 
   const category = params.get("category") ?? "All";
   const [query, setQuery] = useState<string>("");
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    apiFetch<Book[]>("/books", {}, false)
+      .then(setBooks)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   const changeCategory = (c: string) => {
     router.replace(c === "All" ? pathname : `${pathname}?category=${c}`, { scroll: false });
@@ -28,6 +40,16 @@ export default function BooksExplorer({ books }: { books: Book[] }) {
       return matchCat && matchText;
     });
   }, [books, category, query]);
+
+  if (loading) return <Spinner />;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-dashed py-20 text-center text-muted-foreground">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div>

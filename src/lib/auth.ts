@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { jwt } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 
@@ -26,5 +27,5 @@ export const auth = betterAuth({
         },
       }
     : {},
-  plugins: [nextCookies()],
+  plugins: [jwt(), nextCookies()],
 });

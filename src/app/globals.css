@@ -147,11 +147,23 @@
 }
 
 /* Swiper dots (hero has a dark overlay, so dots are white) */
+.swiper-pagination {
+  z-index: 20;
+}
+.swiper-horizontal > .swiper-pagination-bullets,
+.swiper-pagination-bullets.swiper-pagination-horizontal {
+  bottom: 14px !important;
+}
 .swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
   background: #fff !important;
-  opacity: 0.5;
+  opacity: 0.6;
+  transition: width 0.2s;
 }
 .swiper-pagination-bullet-active {
+  width: 26px;
+  border-radius: 9999px;
   background: var(--accent) !important;
   opacity: 1;
 }

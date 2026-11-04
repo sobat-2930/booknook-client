@@ -65,16 +65,16 @@ export default function HeroSlider() {
               {/* Balanced overlay: darker behind text (left), lighter on the right */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/25" />
 
-              <div className="relative mx-auto grid min-h-[560px] max-w-7xl items-center gap-10 px-4 pb-16 pt-10 md:grid-cols-2">
+              <div className="relative mx-auto grid min-h-[420px] max-w-7xl items-center gap-10 px-4 pb-14 pt-8 md:min-h-[460px] md:grid-cols-2">
                 <div>
                   <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent drop-shadow">
                     {s.eyebrow}
                   </p>
-                  <h1 className="text-4xl font-bold leading-tight text-white drop-shadow-md md:text-6xl">
+                  <h1 className="text-4xl font-bold leading-tight text-white drop-shadow-md md:text-5xl">
                     {s.title}
                   </h1>
-                  <p className="mt-5 max-w-lg text-lg text-white/90 drop-shadow">{s.text}</p>
-                  <Button asChild size="lg" className="mt-8 rounded-full">
+                  <p className="mt-4 max-w-lg text-lg text-white/90 drop-shadow">{s.text}</p>
+                  <Button asChild size="lg" className="mt-6 rounded-full">
                     <Link href="/books">Browse Books</Link>
                   </Button>
                 </div>
@@ -86,7 +86,7 @@ export default function HeroSlider() {
                     <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted-foreground">
                       Library Card
                     </p>
-                    <div className="mt-5 space-y-4">
+                    <div className="mt-4 space-y-3">
                       {labels.map((label, i) => (
                         <div key={label}>
                           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -98,7 +98,7 @@ export default function HeroSlider() {
                         </div>
                       ))}
                     </div>
-                    <div className="absolute -bottom-5 -right-4 rotate-12 rounded-md border-4 border-double border-primary px-3 py-1 font-display text-lg font-bold tracking-widest text-primary">
+                    <div className="absolute -bottom-4 -right-4 rotate-12 rounded-md border-4 border-double border-primary bg-card px-3 py-1 font-display text-lg font-bold tracking-widest text-primary">
                       {s.stamp}
                     </div>
                   </div>

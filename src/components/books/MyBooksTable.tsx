@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Pencil, Trash2 } from "lucide-react";
@@ -31,16 +31,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import BookCover from "@/components/common/BookCover";
-import { categories, mockBooks, mockUser } from "@/lib/mock-data";
+import Spinner from "@/components/common/Spinner";
+import { categories } from "@/lib/mock-data";
+import { useSession } from "@/lib/auth-client";
+import { apiFetch } from "@/lib/api";
 import type { Book, Category } from "@/lib/types";
 
 interface EditFormProps {
   book: Book;
+  saving: boolean;
   onSave: (b: Book) => void;
   onCancel: () => void;
 }
 
-function EditForm({ book, onSave, onCancel }: EditFormProps) {
+function EditForm({ book, saving, onSave, onCancel }: EditFormProps) {
   const [category, setCategory] = useState<Category>(book.category);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -95,8 +99,8 @@ function EditForm({ book, onSave, onCancel }: EditFormProps) {
         <Button type="button" variant="outline" className="rounded-full" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" className="rounded-full">
-          Save Changes
+        <Button type="submit" disabled={saving} className="rounded-full">
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
       </DialogFooter>
     </form>
@@ -104,31 +108,71 @@ function EditForm({ book, onSave, onCancel }: EditFormProps) {
 }
 
 export default function MyBooksTable() {
-  // later: GET /books filtered by the logged in user's email
-  const [books, setBooks] = useState<Book[]>(
-    mockBooks.slice(0, 4).map((b) => ({
-      ...b,
-      userName: mockUser.name,
-      userEmail: mockUser.email,
-    }))
-  );
+  const { data: session } = useSession();
+  const email = session?.user?.email;
+
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
   const [editing, setEditing] = useState<Book | null>(null);
   const [deleting, setDeleting] = useState<Book | null>(null);
+  const [busy, setBusy] = useState<boolean>(false);
 
-  const handleSave = (updated: Book) => {
-    // later: PATCH /books/:id
-    setBooks((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
-    setEditing(null);
-    toast.success("Book updated successfully.");
+  useEffect(() => {
+    if (!email) return;
+    apiFetch<Book[]>(`/books?email=${encodeURIComponent(email)}`, {}, false)
+      .then(setBooks)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [email]);
+
+  const handleSave = async (updated: Book) => {
+    setBusy(true);
+    try {
+      const saved = await apiFetch<Book>(`/books/${updated._id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: updated.title,
+          author: updated.author,
+          category: updated.category,
+          copies: updated.copies,
+          description: updated.description,
+        }),
+      });
+      setBooks((prev) => prev.map((b) => (b._id === saved._id ? saved : b)));
+      setEditing(null);
+      toast.success("Book updated successfully.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update the book.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleting) return;
-    // later: DELETE /books/:id
-    setBooks((prev) => prev.filter((b) => b._id !== deleting._id));
-    toast.success(`"${deleting.title}" was removed.`);
-    setDeleting(null);
+    setBusy(true);
+    try {
+      await apiFetch(`/books/${deleting._id}`, { method: "DELETE" });
+      setBooks((prev) => prev.filter((b) => b._id !== deleting._id));
+      toast.success(`"${deleting.title}" was removed.`);
+      setDeleting(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete the book.");
+    } finally {
+      setBusy(false);
+    }
   };
+
+  if (loading) return <Spinner label="Loading your books..." />;
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-dashed py-20 text-center text-muted-foreground">
+        {error}
+      </div>
+    );
+  }
 
   if (books.length === 0) {
     return (
@@ -204,6 +248,7 @@ export default function MyBooksTable() {
             <EditForm
               key={editing._id}
               book={editing}
+              saving={busy}
               onSave={handleSave}
               onCancel={() => setEditing(null)}
             />
@@ -224,8 +269,13 @@ export default function MyBooksTable() {
             <Button variant="outline" className="rounded-full" onClick={() => setDeleting(null)}>
               Keep it
             </Button>
-            <Button variant="destructive" className="rounded-full" onClick={handleDelete}>
-              Yes, delete
+            <Button
+              variant="destructive"
+              disabled={busy}
+              className="rounded-full"
+              onClick={handleDelete}
+            >
+              {busy ? "Deleting..." : "Yes, delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
